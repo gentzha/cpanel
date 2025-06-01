@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Create in web NathzZ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(to bottom right, #6b21a8, #1e3a8a, #0f172a);
+      color: white;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center">
+
+  <!-- LOGIN -->
+  <div id="loginPage" class="w-full max-w-md p-6 bg-white/10 rounded-2xl shadow-lg">
+    <h1 class="text-2xl font-bold text-center mb-6 text-white">Login</h1>
+    <input id="loginUser" type="text" placeholder="Username" class="w-full p-2 mb-4 rounded bg-white/20 text-white placeholder-gray-300">
+    <input id="loginPass" type="password" placeholder="Password" class="w-full p-2 mb-4 rounded bg-white/20 text-white placeholder-gray-300">
+    <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 p-2 rounded text-white font-semibold">Login</button>
+    <p id="loginError" class="text-red-500 mt-3 text-center hidden">Username atau password salah.</p>
+  </div>
+
+  <!-- APP UTAMA -->
+  <div id="mainApp" class="hidden flex flex-col items-center w-full max-w-xl p-6 bg-white/10 rounded-2xl shadow-lg">
+    <h1 class="text-3xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-500">Create in web NathzZ</h1>
+
+    <!-- PILIH PANEL / ADP -->
+    <div class="flex space-x-4 mb-6">
+      <button id="btnPanel" onclick="selectMode('panel')" class="bg-purple-600 px-4 py-2 rounded-xl font-semibold">Buat Panel</button>
+      <button id="btnAdp" onclick="selectMode('adp')" class="bg-gray-600 px-4 py-2 rounded-xl font-semibold">Buat ADP</button>
+    </div>
+
+    <input id="usernameInput" type="text" placeholder="Masukkan nama akun" class="w-full p-2 mb-4 rounded bg-white/20 text-white placeholder-gray-300">
+
+    <button onclick="createAccount()" class="w-full bg-green-600 hover:bg-green-700 p-2 rounded text-white font-semibold mb-6">CREATE</button>
+
+    <div id="outputBox" class="w-full bg-black/30 p-4 rounded-xl text-sm hidden">
+      <pre id="outputText" class="whitespace-pre-wrap text-white font-mono mb-3"></pre>
+      <div class="flex space-x-4">
+        <button onclick="copyText('username')" class="bg-blue-500 hover:bg-blue-600 px-4 py-1 rounded">Salin Nama</button>
+        <button onclick="copyText('password')" class="bg-blue-500 hover:bg-blue-600 px-4 py-1 rounded">Salin Password</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const correctUser = "nathz";
+    const correctPass = "nathzz";
+    let currentMode = "panel";
+    let currentUsername = "";
+    let currentPassword = "";
+
+    function handleLogin() {
+      const user = document.getElementById("loginUser").value.trim();
+      const pass = document.getElementById("loginPass").value.trim();
+      if (user === correctUser && pass === correctPass) {
+        document.getElementById("loginPage").classList.add("hidden");
+        document.getElementById("mainApp").classList.remove("hidden");
+      } else {
+        document.getElementById("loginError").classList.remove("hidden");
+      }
+    }
+
+    function selectMode(mode) {
+      currentMode = mode;
+      document.getElementById("btnPanel").classList.toggle("bg-purple-600", mode === 'panel');
+      document.getElementById("btnPanel").classList.toggle("bg-gray-600", mode !== 'panel');
+      document.getElementById("btnAdp").classList.toggle("bg-purple-600", mode === 'adp');
+      document.getElementById("btnAdp").classList.toggle("bg-gray-600", mode !== 'adp');
+    }
+
+    async function createAccount() {
+      const name = document.getElementById("usernameInput").value.trim();
+      if (!name) return alert("Masukkan nama akun!");
+
+      try {
+        const response = await fetch("http://localhost:3000/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: name,
+            isAdmin: currentMode === "adp"
+          })
+        });
+
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+
+        currentUsername = data.username;
+        currentPassword = data.password;
+
+        let result = "";
+        if (currentMode === "panel") {
+          result = `*Data Akun (panel atau adp) 📦*\n\n📡 ID User: ${data.id}\n👤 Username: ${data.username}\n🔐 Password: ${data.password}\n🌐 ${data.panel_url}\n\n*Syarat & Ketentuan:*\n- Expired akun 1 bulan\n- Simpan data ini sebaik mungkin`;
+        } else {
+          result = `*Data Akun Admin Panel 📦*\n\n📡 ID User: ${data.id}\n👤 Username: ${data.username}\n🔐 Password: ${data.password}\n🌐 ${data.panel_url}\n\n*Syarat & Ketentuan:*\n- Expired akun 1 bulan\n- Simpan data ini sebaik mungkin\n- Jangan asal hapus server!\n- Ketahuan maling sc, auto delete akun no reff!`;
+        }
+
+        document.getElementById("outputText").innerText = result;
+        document.getElementById("outputBox").classList.remove("hidden");
+      } catch (err) {
+        alert("Gagal membuat akun: " + err.message);
+      }
+    }
+
+    function copyText(type) {
+      const text = type === "username" ? currentUsername : currentPassword;
+      navigator.clipboard.writeText(text).then(() => {
+        alert(`${type === "username" ? "Username" : "Password"} disalin!`);
+      });
+    }
+  </script>
+</body>
+</html>
